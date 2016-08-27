@@ -11,6 +11,7 @@ import Numeric
 import Data.Ord
 import Debug.Trace
 import Utils
+import Classes
 
 type FFInt = Integer -- underlying int type used to represent the bits
 newtype F16 = F16 FFInt
@@ -72,12 +73,6 @@ toCoeffs a = map fromEnum terms
 instance Show F16 where
   show (F16 a) = showBitsAsPoly (toCoeffs a)
 
--- find generator
-findgen = [ g | g <- map fromInteger [1..32767], let o = order g, o == 65535 ]
-
-order :: F16 -> Int
-order g = 1 + (length $ takeWhile test $ iterate (*g) g)
-  where test 0 = False -- should never happen
-        test 1 = False
-        test _ = True
+instance ToBits F16 where
+  toBits = toCoeffs'
 

@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Lib, F16, Check, Utils
+  exposed-modules:     Lib, F16, Check, Utils, Classes
   build-depends:       base >= 4.7 && < 5, polynomial, HaskellForMaths
   default-language:    Haskell2010
 

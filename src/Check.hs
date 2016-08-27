@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module Check where
 
 import Math.Polynomial
@@ -5,12 +7,16 @@ import Math.Core.Field (F2)
 import Control.Monad
 import Numeric
 import Utils
+import Classes
 
 import F16
 
 fromF2 :: F2 -> Int
 fromF2 0 = 0
 fromF2 _ = 1
+
+instance ToBits (Poly F2) where
+  toBits p = map fromF2 (polyCoeffs LE p)
 
 r16 = poly LE [(1::F2), 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
 
@@ -26,11 +32,8 @@ polyPowerMod m p k =
 showPoly :: Poly F2 -> String
 showPoly p = showBitsAsPoly (map fromF2 (polyCoeffs LE p))
 
-checkF16 :: F16 -> Poly F2 -> Bool
-checkF16 (F16 x) p =
-  let as = map fromIntegral (toCoeffs x)
-      bs = polyCoeffs LE p
-  in as == bs
+checkBits :: (ToBits a, ToBits b) => a -> b -> Bool
+checkBits x p = toBits x == toBits p
 
 checkPowersF16 :: Int -> F16 -> IO Bool
 checkPowersF16 n a@(F16 x) = 
@@ -40,9 +43,9 @@ checkPowersF16 n a@(F16 x) =
       pows2 = take n $ iterate op one
   in checkList pows1 pows2
 
-checkList :: [F16] -> [Poly F2] -> IO Bool
+checkList :: (Show a, ToBits a) => [a] -> [Poly F2] -> IO Bool
 checkList as ps =
-  let fails = [ t | t@(k,ak,pk) <- zip3 [(0::Int)..] as ps, not (checkF16 ak pk) ]
+  let fails = [ t | t@(k,ak,pk) <- zip3 [(0::Int)..] as ps, not (checkBits ak pk) ]
   in case fails of
        [] -> return True
        ((k,ak,pk):_) -> do
