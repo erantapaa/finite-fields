@@ -16,11 +16,12 @@ import Classes
 type FFInt = Integer -- underlying int type used to represent the bits
 newtype F16 = F16 FFInt
 
+ndims = 16  -- dimension of the field
 bitsPerCoeff = 5
 ones = iterate (\x -> (shiftL x bitsPerCoeff) .|. 1) 0
 
-masklo = ones !! 16
-maskhi = shiftL masklo (16*bitsPerCoeff)
+masklo = ones !! ndims
+maskhi = shiftL masklo (ndims*bitsPerCoeff)
 
 instance Eq F16 where
   F16 a == F16 b = a == b
@@ -28,10 +29,10 @@ instance Eq F16 where
 reduce :: FFInt -> FFInt
 reduce z = if zz == 0 then (z .&. masklo) else reduce x
   where zz = z .&. maskhi
-        r1 = shiftR zz ((16-5)*bitsPerCoeff)
-        r2 = shiftR zz ((16-3)*bitsPerCoeff)
-        r3 = shiftR zz ((16-1)*bitsPerCoeff)
-        r4 = shiftR zz (16*bitsPerCoeff)
+        r1 = shiftR zz ((ndims-5)*bitsPerCoeff)
+        r2 = shiftR zz ((ndims-3)*bitsPerCoeff)
+        r3 = shiftR zz ((ndims-1)*bitsPerCoeff)
+        r4 = shiftR zz (ndims*bitsPerCoeff)
         r = xor r1 (xor r2 (xor r3 r4))
         x = (xor (xor z zz) r) .&. (maskhi .|. masklo)
 
@@ -42,12 +43,12 @@ instance Num F16 where
   negate              = id
   abs = error "abs not implemented for F16"
   signum = error "signum not implemented for F16"
-  fromInteger a = F16 (foldl' go 0 [0..15])
+  fromInteger a = F16 (foldl' go 0 [0..ndims-1])
     where go s k = if testBit a k then s .|. (bit (k*bitsPerCoeff)) else s
 
 instance Fractional F16 where
   recip (F16 0) = error "division by zero"
-  recip x = x ^ 65534
+  recip x = x ^ (2^ndims-2 :: Int)
   fromRational r = fromInteger p * (recip (fromInteger q))
     where p = numerator r
           q = denominator r
