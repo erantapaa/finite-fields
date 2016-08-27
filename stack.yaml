@@ -42,6 +42,8 @@ packages:
 extra-deps:
 - HaskellForMaths-0.4.8
 - polynomial-0.7.2
+- data-dword-0.3.1
+- data-bword-0.1.0.1
 
 # Override default flag values for local packages and extra-deps
 flags: {}

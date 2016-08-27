@@ -8,15 +8,11 @@ import Control.Monad
 import Numeric
 import Utils
 import Classes
+import Data.List
+import PolyF2
 
 import F16
-
-fromF2 :: F2 -> Int
-fromF2 0 = 0
-fromF2 _ = 1
-
-instance ToBits (Poly F2) where
-  toBits p = map fromF2 (polyCoeffs LE p)
+import F16a
 
 r16 = poly LE [(1::F2), 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
 
@@ -35,22 +31,33 @@ showPoly p = showBitsAsPoly (map fromF2 (polyCoeffs LE p))
 checkBits :: (ToBits a, ToBits b) => a -> b -> Bool
 checkBits x p = toBits x == toBits p
 
-checkPowersF16 :: Int -> F16 -> IO Bool
-checkPowersF16 n a@(F16 x) = 
-  let p = poly LE (map fromIntegral (toCoeffs x))
+checkPowersF16 :: (Show a, Num a, ToBits a) => Int -> a -> IO Bool
+checkPowersF16 n a = 
+  let p = poly LE (map fromIntegral (toBits a))
       pows1 = take n $ iterate (*a) 1
       op q = remPoly (multPoly p q) r16
       pows2 = take n $ iterate op one
   in checkList pows1 pows2
 
-checkList :: (Show a, ToBits a) => [a] -> [Poly F2] -> IO Bool
+checkF16withF16a :: Int -> Integer -> IO Bool
+checkF16withF16a n m =
+  let a = fromInteger m :: F16
+      b = fromInteger m :: F16a
+      pows1 = take n $ iterate (*a) 1
+      pows2 = take n $ iterate (*b) 1
+  in checkList pows1 pows2
+
+showlist :: Show a => [a] -> String
+showlist xs = intercalate " " (map show xs)
+
+checkList :: (Show a, ToBits a, Show b, ToBits b) => [a] -> [b] -> IO Bool
 checkList as ps =
   let fails = [ t | t@(k,ak,pk) <- zip3 [(0::Int)..] as ps, not (checkBits ak pk) ]
   in case fails of
        [] -> return True
        ((k,ak,pk):_) -> do
          putStrLn $ "Test failed for k = " ++ show k
-         putStrLn $ "  F16:  " ++ show ak
-         putStrLn $ "  Poly: " ++ showPoly pk
+         putStrLn $ "  A: " ++ showlist (toBits ak)
+         putStrLn $ "  B: " ++ showlist (toBits pk)
          return False
 
